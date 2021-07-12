@@ -1,0 +1,4 @@
+The folder ./work contains all the VHDL files required for 
+testing the physical view.
+The folder ./testbench contains the generated VHDL testbench 
+for the physical view.

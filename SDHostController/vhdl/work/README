@@ -1,0 +1,26 @@
+The following files are generated from the Aa source: 
+	ahir_system_global_package.vhdl
+	ahir_system_test_bench.vhdl
+	ahir_system.vhdl
+The following is used for transmitting data:
+	transmitter.vhdl
+The following is used for data receive:
+	receiver_data.vhdl
+This is used for receiving commands:
+	receiver.vhdl
+This is used for receiving from DAT0 line:
+	receiver_with_busy.vhdl
+This makes the tristate logic:
+	bidirectional.vhdl
+This is takes the trisate input and makes logic signals:
+	bidir_tb.vhdl
+The Clock controller:
+	clock_controller.vhdl
+This module converts the bitstream into FIFO data:
+	converter.vhdl
+This module converts the bitsteram into FIFO data:
+	tb_pipe.vhdl
+The top wrapper of the system:
+	top_wrapper.vhdl
+The top module for testing the physical view:
+	wrapper_top.vhdl

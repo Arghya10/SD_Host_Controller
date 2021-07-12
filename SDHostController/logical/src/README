@@ -1,0 +1,14 @@
+The top module which is always running:
+	sdhc.aa
+The module which generates commands:
+	command_generator.aa
+The Data Receiver module:
+	dataRx.aa
+The Data Transmitter module:
+	dataTx.aa
+The module for generating crc7:
+	generate_crc_7.aa
+The  module for writing into the registers:
+	sdhc_register_write.aa
+All declarations are made here:
+	decls.aa

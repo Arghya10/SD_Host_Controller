@@ -1,0 +1,14 @@
+To build the system run 
+	. build.sh
+To run the testbench for physical view
+	Open two terminals
+	1. First run the 
+		./bin/testbench_vhdl null
+	2. Then start the following in the other terminal
+		./wrapper_top_test_bench
+
+Documents are in ./docs 
+Aa sources are in ./src
+The C testbench in ./testbench
+The vhdl files are in ./vhdl
+The logical view is in ./logical

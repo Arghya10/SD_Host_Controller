@@ -1,0 +1,4 @@
+The testbench is here
+	testbench.c is the main testbench
+	sdcard.c is for sdcard model
+

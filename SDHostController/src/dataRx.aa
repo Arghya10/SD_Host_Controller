@@ -1,0 +1,321 @@
+$module [dataRx] $in(singleMultipleReadBlock:$uint<1>) $out(dataErrorInterruptStatusVar1:$uint<8>) $is
+{
+	$branchblock[data_rx]
+	{
+		presentState1Var:= sdhcRegisters[{PresentState + 1}]
+		presentState0Var:= sdhcRegisters[PresentState]
+		//Host Control1 Register: Data Transfer Width (1: 4-bit Mode) (0: 1-bit Mode)
+		$if(sdhcRegisters[HostControl] [] 1)$then
+			//DAT0Enable := ONE_1
+			//DAT1Enable := ONE_1
+			//DAT2Enable := ONE_1
+			//DAT3Enable := ONE_1
+			//$seriesblock[rcv]
+			$parallelblock [rcv]
+			{
+				$call recvdat0 () (dat0 nextCRC_0 stopBit0)
+				$call recvdat1 () (dat1 nextCRC_1 stopBit1)
+				$call recvdat2 () (dat2 nextCRC_2 stopBit2)
+				$call recvdat3 () (dat3 nextCRC_3 stopBit3)
+				//$join s1 s2 s3 s4 
+			}(dat0 => dat0 nextCRC_0 => nextCRC_0 stopBit0 => stopBit0 dat1 => dat1 nextCRC_1 => nextCRC_1 stopBit1 => stopBit1 dat2 => dat2 nextCRC_2 => nextCRC_2 stopBit2 => stopBit2 dat3 => dat3 nextCRC_3 => nextCRC_3 stopBit3 => stopBit3)
+			//DAT0Enable := ZERO_1
+			//DAT1Enable := ZERO_1
+			//DAT2Enable := ZERO_1
+			//DAT3Enable := ZERO_1
+			//$rreport(DATAreieve rcv stopBit0 dat0)
+			//$if(singleMultipleReadBlock == 0)$then
+				//------------DAT line Active =0------------
+			//	sdhcRegisters[PresentState]:= (presentState0Var & _hfb)
+			//$endif
+			$volatile stopBitError0:= (stopBit0 == 0)//1:Error 0:No Error
+			//Calculating CRC 16 for data block
+			$dopipeline $depth 10 $fullrate
+				$merge $entry $loopback
+					$phi J_0:= ($bitcast ($uint<13>) 0) $on $entry next_J_0 $on $loopback
+					$phi CRC_16_0:= ($bitcast ($uint<16>) 0) $on $entry nextCRC16_0 $on $loopback
+					$phi tempData0 := dat0 $on $entry nextTempData0 $on $loopback
+				$endmerge
+				//$call generate_crc_16 (CRC16,tempData) (nextCRC16)
+				$volatile inv0:= ((tempData0 [] 1023) ^ (CRC_16_0 [] 15) )
+				$volatile nextCRC16_0:= ($concat ($slice CRC_16_0 14 12) ((CRC_16_0 [] 11 )^ inv0) ($slice CRC_16_0 10 5) ((CRC_16_0 [] 4) ^ inv0) ($slice CRC_16_0 3 0) inv0)
+				$volatile nextTempData0:= (tempData0 << 1)
+				$volatile next_J_0 := (J_0 + 1)
+				//$rreport(IN CR CRC_16 nextCRC16 inv )
+				//$if(next_J_0 < 1024)$then
+				//	$place[loopback0]
+				//$endif
+			$while(next_J_0 < 1024)
+			//$rreport(OUTDATA data dat nextCRC16 lastBlock)
+			//check CRC
+			$volatile crcError0:=(nextCRC_0 != nextCRC16_0)
+			//------------------------------------------
+			
+			//$rreport(DATAreieve rcv stopBit1 dat1)
+			//$rreport(DATArexieve rcv dat nextCRC)
+			//$if(singleMultipleReadBlock == 0)$then
+				//------------DAT line Active =0------------
+			//	sdhcRegisters[PresentState]:= (presentState0Var & _hfb)
+			//$endif
+			$volatile stopBitError1:= (stopBit1 == 0)//1:Error 0:No Error
+			//Calculating CRC 16 for data block
+			$dopipeline $depth 10 $fullrate
+				$merge $entry $loopback
+					$phi J_1:= ($bitcast ($uint<13>) 0) $on $entry next_J_1 $on $loopback
+					$phi CRC_16_1:= ($bitcast ($uint<16>) 0) $on $entry nextCRC16_1 $on $loopback
+					$phi tempData1 := dat1 $on $entry nextTempData1 $on $loopback
+				$endmerge
+				//$call generate_crc_16 (CRC16,tempData) (nextCRC16)
+				$volatile inv1:= ((tempData1 [] 1023) ^ (CRC_16_1 [] 15) )
+				$volatile nextCRC16_1:= ($concat ($slice CRC_16_1 14 12) ((CRC_16_1 [] 11 )^ inv1) ($slice CRC_16_1 10 5) ((CRC_16_1 [] 4) ^ inv1) ($slice CRC_16_1 3 0) inv1)
+				$volatile nextTempData1:= (tempData1 << 1)
+				$volatile next_J_1 := (J_1 + 1)
+				//$rreport(IN CR CRC_16 nextCRC16 inv )
+				//$if(next_J_1 < 1024)$then
+				//	$place[loopback1]
+				//$endif
+			$while(next_J_1 < 1024)
+			//$rreport(OUTDATA data dat nextCRC16 lastBlock)
+			//check CRC
+			$volatile crcError1:=(nextCRC_1 != nextCRC16_1)
+			//-----------------------------------------
+			
+			//$rreport(DATArexieve rcv dat nextCRC)
+			//$if(singleMultipleReadBlock == 0)$then
+				//------------DAT line Active =0------------
+			//	sdhcRegisters[PresentState]:= (presentState0Var & _hfb)
+			//$endif
+			$volatile stopBitError2:= (stopBit2 == 0)//1:Error 0:No Error
+			//Calculating CRC 16 for data block
+			$dopipeline $depth 5 $fullrate
+				$merge $entry $loopback
+					$phi J_2:= ($bitcast ($uint<13>) 0) $on $entry next_J_2 $on $loopback
+					$phi CRC_16_2:= ($bitcast ($uint<16>) 0) $on $entry nextCRC16_2 $on $loopback
+					$phi tempData2 := dat2 $on $entry nextTempData2 $on $loopback
+				$endmerge
+				//$call generate_crc_16 (CRC16,tempData) (nextCRC16)
+				$volatile inv2:= ((tempData2 [] 1023) ^ (CRC_16_2 [] 15) )
+				$volatile nextCRC16_2:= ($concat ($slice CRC_16_2 14 12) ((CRC_16_2 [] 11 )^ inv2) ($slice CRC_16_2 10 5) ((CRC_16_2 [] 4) ^ inv2) ($slice CRC_16_2 3 0) inv2)
+				$volatile nextTempData2:= (tempData2 << 1)
+				$volatile next_J_2 := (J_2 + 1)
+				//$rreport(IN CR CRC_16 nextCRC16 inv )
+				//$if(next_J_2 < 1024)$then
+				//	$place[loopback2]
+				//$endif
+			$while(next_J_2<1024)
+			//$rreport(OUTDATA data dat nextCRC16 lastBlock)
+			//check CRC
+			$volatile crcError2:=(nextCRC_2 != nextCRC16_2)
+			//-----------------------------------------
+			
+			//$rreport(DATArexieve rcv dat nextCRC)
+			//$if(singleMultipleReadBlock == 0)$then
+				//------------DAT line Active =0------------
+			//	sdhcRegisters[PresentState]:= (presentState0Var & _hfb)
+			//$endif
+			$volatile stopBitError3:= (stopBit3 == 0)//1:Error 0:No Error
+			//Calculating CRC 16 for data block
+			$dopipeline $depth 10 $fullrate
+				$merge $entry $loopback
+					$phi J_3:= ($bitcast ($uint<13>) 0) $on $entry next_J_3 $on $loopback
+					$phi CRC_16_3:= ($bitcast ($uint<16>) 0) $on $entry nextCRC16_3 $on $loopback
+					$phi tempData3 := dat3 $on $entry nextTempData3 $on $loopback
+				$endmerge
+				//$call generate_crc_16 (CRC16,tempData) (nextCRC16)
+				$volatile inv3:= ((tempData3 [] 1023) ^ (CRC_16_3 [] 15) )
+				$volatile nextCRC16_3:= ($concat ($slice CRC_16_3 14 12) ((CRC_16_3 [] 11 )^ inv3) ($slice CRC_16_3 10 5) ((CRC_16_3 [] 4) ^ inv3) ($slice CRC_16_3 3 0) inv3)
+				$volatile nextTempData3:= (tempData3 << 1)
+				$volatile next_J_3 := (J_3 + 1)
+				//$rreport(IN CR CRC_16 nextCRC16 inv )
+				//$if(next_J_3 < 1024)$then
+				//	$place[loopback3]
+				//$endif
+			$while(next_J_3 < 1024)
+			//$rreport(OUTDATA data dat nextCRC16 lastBlock)
+			//check CRC
+			$volatile crcError3:=(nextCRC_3 != nextCRC16_3)
+			//--------------------------------------
+			rxBufferPointer := ($bitcast ($uint<10>) 512)
+			$if(singleMultipleReadBlock == 0)$then
+				//------------DAT line Active =0------------
+				sdhcRegisters[PresentState]:= (presentState0Var & _hfb)
+			$endif
+			//Writing dataBufferRx
+			$dopipeline $depth 10 $fullrate
+			$merge $entry $loopback
+				$phi B:= ($bitcast ($uint<10>)0) $on $entry next_B $on $loopback
+				$phi dataForBuffer0:= dat0 $on $entry nextDataForBuffer0 $on $loopback
+				$phi dataForBuffer1:= dat1 $on $entry nextDataForBuffer1 $on $loopback
+				$phi dataForBuffer2:= dat2 $on $entry nextDataForBuffer2 $on $loopback
+				$phi dataForBuffer3:= dat3 $on $entry nextDataForBuffer3 $on $loopback
+			$endmerge
+				dataBufferRx := ($concat (dataForBuffer3 [] 1023) (dataForBuffer2 [] 1023) (dataForBuffer1 [] 1023) (dataForBuffer0 [] 1023) (dataForBuffer3 [] 1022) (dataForBuffer2 [] 1022) (dataForBuffer1 [] 1022) (dataForBuffer0 [] 1022) )
+				//biff:= ($concat (dataForBuffer0 [] 1023) (dataForBuffer1 [] 1023) (dataForBuffer2 [] 1023) (dataForBuffer3 [] 1023) (dataForBuffer0 [] 1022) (dataForBuffer1 [] 1022) (dataForBuffer2 [] 1022) (dataForBuffer3 [] 1022) )
+				//$rreport(DATA4 buf biff)
+				$volatile nextDataForBuffer0 := (dataForBuffer0 <<2)
+				$volatile nextDataForBuffer1 := (dataForBuffer1 <<2)
+				$volatile nextDataForBuffer2 := (dataForBuffer2 <<2)
+				$volatile nextDataForBuffer3 := (dataForBuffer3 <<2)
+				$volatile next_B := (B + 1)
+				//$if(next_B<512)$then
+				//	$place[finaldataloop]
+				//$endif
+			$while(next_B < 512)
+			$volatile stopBitError_Final := ($reduce | stopBitError0 stopBitError1 stopBitError2 stopBitError3)
+			$volatile crcError_Final := ($reduce | crcError0 crcError1 crcError2 crcError3)
+			dataErrorInterruptStatusVar1_4:= ($concat ZERO_1 stopBitError_Final crcError_Final ZERO_1 ZERO_2 ZERO_2) 
+		$else
+			//Receive start bit
+			startBit := DAT0Rx
+			//$rreport(start here startBit)
+			$branchblock[dat_receive]
+			{
+				$merge $entry loopback1
+					$phi I:= ($bitcast ($uint<10>) 0) $on $entry next_I $on loopback1
+					$phi dat:= ($bitcast ($uint<4096>) 0) $on $entry next_data $on loopback1
+				$endmerge
+				bit7:= DAT0Rx
+				bit6:= DAT0Rx
+				bit5:= DAT0Rx
+				bit4:= DAT0Rx
+				bit3:= DAT0Rx
+				bit2:= DAT0Rx
+				bit1:= DAT0Rx
+				bit0:= DAT0Rx
+				//buffer:= ($concat bit7 bit6 bit5 bit4 bit3 bit2 bit1 bit0)
+				dataBufferRx:= ($concat bit7 bit6 bit5 bit4 bit3 bit2 bit1 bit0)
+				next_data := ((dat<<8) | (($bitcast ($uint<4088>)0) && ($concat bit7 bit6 bit5 bit4 bit3 bit2 bit1 bit0) ))
+				//$rreport(DATA next buffer I)
+				//rxBufferPointer = (rxBufferPointer + 1)
+				next_I := (I + 1)
+				$if(next_I < 512)$then
+					$place [loopback1]
+				$endif
+			}(next_data => dat)
+			//All data Read from the DAT0Rx to buffer
+			rxBufferPointer := ($bitcast ($uint<10>) 512)
+			//Recieving CRC bits
+			$merge $entry crcloopback
+				$phi K:= ($bitcast ($uint<5>) 0) $on $entry next_K $on crcloopback
+				$phi currentCRC := ($bitcast ($uint<16>) 0) $on $entry nextCRC $on crcloopback
+			$endmerge
+				nextCRC := ((currentCRC << 1) | (($bitcast ($uint<15>) 0) && DAT0Rx))
+				next_K := (K + 1)
+			$if(next_K < 16)$then
+				$place[crcloopback]
+			$endif
+			//Recieving stop bit
+			stopBit := DAT0Rx
+			//$rreport(DATArexieve rcv dat nextCRC)
+			$if(singleMultipleReadBlock == 0)$then
+				//------------DAT line Active =0------------
+				sdhcRegisters[PresentState]:= (presentState0Var & _hfb)
+			$endif
+			stopBitError:= (stopBit == 0)//1:Error 0:No Error
+			//Calculating CRC 16 for data block
+				$merge $entry loopback
+					$phi J:= ($bitcast ($uint<13>) 0) $on $entry next_J $on loopback
+					$phi CRC_16:= ($bitcast ($uint<16>) 0) $on $entry nextCRC16 $on loopback
+					$phi tempData := dat $on $entry nextTempData $on loopback
+				$endmerge
+				//$call generate_crc_16 (CRC16,tempData) (nextCRC16)
+				inv:= ((tempData [] 4095) ^ (CRC_16 [] 15) )
+				nextCRC16:= ($concat ($slice CRC_16 14 12) ((CRC_16 [] 11 )^ inv) ($slice CRC_16 10 5) ((CRC_16 [] 4) ^ inv) ($slice CRC_16 3 0) inv)
+				nextTempData:= (tempData << 1)
+				$volatile next_J := (J + 1)
+				//$rreport(IN CR CRC_16 nextCRC16 inv )
+				$if(next_J < 4096)$then
+					$place[loopback]
+				$endif
+			//$rreport(OUTDATA data dat nextCRC16 lastBlock)
+			//check CRC
+			crcError:=(nextCRC != nextCRC16)
+			dataRxEnrty:= ONE_1
+			dataErrorInterruptStatusVar1_0:= ($concat ZERO_1 stopBitError crcError ZERO_1 ZERO_2 ZERO_2) 
+			//$rreport(datae err dataErrorInterruptStatusVar1 stopBitError crcError nextCRC nextCRC16)	
+		$endif
+			dataErrorInterruptStatusVar1:= ($mux (sdhcRegisters[HostControl] [] 1) dataErrorInterruptStatusVar1_4 dataErrorInterruptStatusVar1_0)
+			//Single or Multiple Block 
+				$if(singleMultipleReadBlock == 0)$then
+					//------------Read Transfer Inactive-----------
+					sdhcRegisters[{PresentState + 1}]:= (presentState1Var & _hfd)
+					//-------------Command Inhibit (DAT) = 0------------------
+					sdhcRegisters[PresentState]:= (presentState0Var & _hfd)
+					//transferComplete := (ZERO_8 | _h02)
+				$endif
+			$rreport(You check nextCRC16 nextCRC rxBufferPointer)		
+
+	}
+}
+
+$module [recvdat0] $in() $out(dat0:$uint<1024> nextCRC_0:$uint<16> stopBit0:$uint<1>) $is
+{
+	$branchblock[parallelblock_1]
+	{
+				$dopipeline $depth 7 $fullrate
+				$merge $entry $loopback
+					$phi I_0:= ($bitcast ($uint<11>) 0) $on $entry next_I_0 $on $loopback
+					$phi dat0_t:= ($bitcast ($uint<1042>) 0) $on $entry next_data0 $on $loopback
+				$endmerge
+					next_data0 := ((dat0_t << 1) | (($bitcast ($uint<1041>) 0) && DAT0Rx))
+					$volatile next_I_0 := (I_0 + 1)
+				$while(next_I_0 < 1042)
+				
+				$volatile $split (next_data0 1 1024 16 1) (startBit0 dat0 nextCRC_0 stopBit0)
+
+	}
+}
+
+$module [recvdat1] $in() $out(dat1:$uint<1024> nextCRC_1:$uint<16> stopBit1:$uint<1>) $is
+{
+	$branchblock[parallelblock_2]
+	{
+				$dopipeline $depth 7 $fullrate
+				$merge $entry $loopback
+					$phi I_1:= ($bitcast ($uint<11>) 0) $on $entry next_I_1 $on $loopback
+					$phi dat1_t:= ($bitcast ($uint<1042>) 0) $on $entry next_data1 $on $loopback
+				$endmerge
+					next_data1 := ((dat1_t << 1) | (($bitcast ($uint<1041>) 0) && DAT1Rx))
+					$volatile next_I_1 := (I_1 + 1)
+				$while(next_I_1 < 1042)
+				
+				$volatile $split (next_data1 1 1024 16 1) (startBit1 dat1 nextCRC_1 stopBit1)
+
+	}
+}
+
+$module [recvdat2] $in() $out(dat2:$uint<1024> nextCRC_2:$uint<16> stopBit2:$uint<1>) $is
+{
+	$branchblock[parallelblock_3]
+	{
+				$dopipeline $depth 7 $fullrate
+				$merge $entry $loopback
+					$phi I_2:= ($bitcast ($uint<11>) 0) $on $entry next_I_2 $on $loopback
+					$phi dat2_t:= ($bitcast ($uint<1042>) 0) $on $entry next_data2 $on $loopback
+				$endmerge
+					next_data2 := ((dat2_t << 1) | (($bitcast ($uint<1041>) 0) && DAT2Rx))
+					$volatile next_I_2 := (I_2 + 1)
+				$while(next_I_2 < 1042)
+				
+				$volatile $split (next_data2 1 1024 16 1) (startBit2 dat2 nextCRC_2 stopBit2)
+
+	}
+}
+
+$module [recvdat3] $in() $out(dat3:$uint<1024> nextCRC_3:$uint<16> stopBit3:$uint<1>) $is
+{
+	$branchblock[parallelblock_4]
+	{
+				$dopipeline $depth 7 $fullrate
+				$merge $entry $loopback
+					$phi I_3:= ($bitcast ($uint<11>) 0) $on $entry next_I_3 $on $loopback
+					$phi dat3_t:= ($bitcast ($uint<1042>) 0) $on $entry next_data3 $on $loopback
+				$endmerge
+					next_data3 := ((dat3_t << 1) | (($bitcast ($uint<1041>) 0) && DAT3Rx))
+					$volatile next_I_3 := (I_3 + 1)
+				$while(next_I_3 < 1042)
+				
+				$volatile $split (next_data3 1 1024 16 1) (startBit3 dat3 nextCRC_3 stopBit3)
+
+	}
+}

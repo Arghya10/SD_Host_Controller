@@ -1,0 +1,4 @@
+To build the logical view
+	. build.sh
+To run the logical view
+	./bin/testbench_aa2c null
