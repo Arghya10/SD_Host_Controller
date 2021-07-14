@@ -306,23 +306,4 @@ $module [command_generator] $in() $out(normalInterruptStatusVar1:$uint<8> normal
 	}
 }
 
-//$module [bigResponseWrite] $in(CID:$uint<120>) $out() $is
-//{
-//	$branchblock[big_resp]
-//	{
-//		$dopipeline $depth 10 $fullrate
-//		$merge $entry $loopback
-//			$phi k := ($bitcast ($uint<8>) 0) $on $entry next_k $on $loopback
-//			$phi temp := CID $on $entry next_temp $on $loopback 
-//		$endmerge
-//			$volatile address:= (16 + k)//Response0 + k
-//			sdhcRegisters[address]:= ($slice temp 7 0)
-//			$volatile next_temp:= (temp >> 8)
-//			$volatile next_k:= ( k + 1)
-//			//$volatile next_temp:= (temp + 8)
-		//$if(next_k < 15) $then
-		//	$place[loopback]
-		//$endif
-//		$while(next_k < 15)
-//	}
-//}
+

@@ -6,10 +6,6 @@ $module [dataRx] $in(singleMultipleReadBlock:$uint<1>) $out(dataErrorInterruptSt
 		presentState0Var:= sdhcRegisters[PresentState]
 		//Host Control1 Register: Data Transfer Width (1: 4-bit Mode) (0: 1-bit Mode)
 		$if(sdhcRegisters[HostControl] [] 1)$then
-			//DAT0Enable := ONE_1
-			//DAT1Enable := ONE_1
-			//DAT2Enable := ONE_1
-			//DAT3Enable := ONE_1
 			//$seriesblock[rcv]
 			$parallelblock [rcv]
 			{
@@ -19,10 +15,6 @@ $module [dataRx] $in(singleMultipleReadBlock:$uint<1>) $out(dataErrorInterruptSt
 				$call recvdat3 () (dat3 nextCRC_3 stopBit3)
 				//$join s1 s2 s3 s4 
 			}(dat0 => dat0 nextCRC_0 => nextCRC_0 stopBit0 => stopBit0 dat1 => dat1 nextCRC_1 => nextCRC_1 stopBit1 => stopBit1 dat2 => dat2 nextCRC_2 => nextCRC_2 stopBit2 => stopBit2 dat3 => dat3 nextCRC_3 => nextCRC_3 stopBit3 => stopBit3)
-			//DAT0Enable := ZERO_1
-			//DAT1Enable := ZERO_1
-			//DAT2Enable := ZERO_1
-			//DAT3Enable := ZERO_1
 			//$rreport(DATAreieve rcv stopBit0 dat0)
 			//$if(singleMultipleReadBlock == 0)$then
 				//------------DAT line Active =0------------

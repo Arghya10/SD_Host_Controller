@@ -27,10 +27,10 @@ $parameter HostControl2 62
 $parameter Capabilities 64
 //$parameter MaxCurrentCapabilities 72
 //$parameter PresetValue 96
-//$parameter HostControllerVersion 254
+$parameter HostControllerVersion 254
 
 // Register set size
-$parameter REGISTERSETSIZE 72
+$parameter REGISTERSETSIZE 256
 
 //useful constants
 $constant ZERO_8: $uint<8> := 0
@@ -79,8 +79,6 @@ $pipe commandTx :$uint<1> $depth 48
 //Pipe for recieving response 
 $pipe responseRx :$uint<1> $depth 4
 
-//A dummy pipe----will not be used
-$pipe dummy :$uint<1> $depth 1
 
 //Pipe for sending Data
 $pipe DAT0Tx :$uint<1> $depth 5
@@ -113,19 +111,22 @@ $pipe busyResponse:$uint<1> $out $signal
 //Whether it is waiting for normal data
 $pipe responseEnable:$uint<1> $out $signal
 
+// For Enabling SD clock
 $pipe sdClkEnable:$uint<1> $out $signal
 
+// For detecting if the clock has started
 $pipe clkStable:$uint<1> $in $signal
 
+// For selecting the frequency
 $pipe frequencySelect:$uint<20> $out $signal
 
+//To detect if the clock is ready after 74 clock cycles
 $pipe ready:$uint<1> $in $signal
-
+//There should be 8 clock cycles between two consecutive commands
 $pipe ready8clocks:$uint<1> $in $signal
-
+//Ready to start the clock count
 $pipe readyClockCountEnable:$uint<1> $out $signal
 
-$pipe in_data:  $uint<8>  $depth 16
-$pipe out_data: $uint<8>  $depth 8
+//To indicate that the receiver should wait for a 136 bit response 
 $pipe bigResponseEnable:$uint<1> $out $signal
 

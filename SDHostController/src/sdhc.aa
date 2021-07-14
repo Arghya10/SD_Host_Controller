@@ -20,10 +20,7 @@ $module [sdhc_daemon] $in() $out() $is
 	SDHC_to_IRC_INT := ZERO_1
 	oe := ZERO_1
 	busy := ZERO_1
-	//DAT0Enable := ZERO_1
-	//DAT1Enable := ZERO_1
-	//DAT2Enable := ZERO_1
-	//DAT3Enable := ZERO_1
+	
 	readyClockCountEnable := ONE_1
 	normalInterruptFlag1:= _hFF
 	normalInterruptFlag2:= _hFF
@@ -41,7 +38,6 @@ $module [sdhc_daemon] $in() $out() $is
 	
 	$branchblock[loop]{
 
-		//$dopipeline $depth 10 $fullrate
 		
 		$merge $entry loopback 
 		$endmerge
@@ -348,13 +344,13 @@ $module [sdhc_daemon] $in() $out() $is
 } 
 
 
-
+// Module for reading form registers
 $module [readSDHCRegisters]
 $in (address:$uint<8>) $out (data:$uint<8>) $is
 {
 	data:= sdhcRegisters[address]
 }
-
+// Module for writing into registers
 $module [writeSDHCRegisters]
 $in (address:$uint<8> data:$uint<8>) $out () $is
 {
