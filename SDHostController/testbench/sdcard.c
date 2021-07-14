@@ -136,6 +136,7 @@ typedef struct SDDescriptor
 
 // The SD card descriptor.
 static SDDescriptor sdCard;
+// CRC7 generation
 static uint8_t CRC7_one(uint8_t t, uint8_t data) {
 	const uint8_t g = 0x89;
 	uint8_t i;
@@ -148,6 +149,7 @@ static uint8_t CRC7_one(uint8_t t, uint8_t data) {
 
 	return t;
 }
+// CRC16 generation
 uint8_t* CRC_16(uint8_t * data, int length)
 {
         uint8_t *crc;
@@ -186,21 +188,13 @@ uint8_t* CRC_16(uint8_t * data, int length)
         }
         return crc;
 }
+// DAT transmit Threads
 void DAT0()
 {
         uint8_t readStart =1,readStop;
-        //uint8_t dataBlock0[1024];
         uint8_t CRC16[16];
         uint8_t dataBlock0new[1042];
         int i;
-        /*while(1){
-        readStart = read_uint8("DAT0Tx");
-        if(readStart == 0)
-                break;
-        }
-        read_uint8_n("DAT0Tx",dataBlock0,1024);
-        read_uint8_n("DAT0Tx",CRC16,16);
-        readStop = read_uint8("DAT0Tx"); */
         read_uint8_n("DAT0Tx",dataBlock0new,1042);  
         readStart = dataBlock0new[0];
         for(i=0;i<1024;i++)
@@ -208,29 +202,13 @@ void DAT0()
                 dataBlock0[i] = dataBlock0new[i+1];
         }
         readStop = dataBlock0new[1041];
-        //write_uint8("DAT0Rx",0x0);
-        //write_uint8("DAT0Rx",0x0);
-        //write_uint8("DAT0Rx",0x0);
-        //write_uint8("DAT0Rx",0x80); 
 }
 void DAT1()
 {
         uint8_t readStart =1,readStop;
         uint8_t dataBlock1new[1042];
-        //uint8_t dataBlock0[1024];
         uint8_t CRC16[16];
         int i;
-        //while (1)
-        //{
-        /*while(1){
-        readStart = read_uint8("DAT1Tx");
-        if(readStart == 0)
-                break;
-        }
-        read_uint8_n("DAT1Tx",dataBlock1,1024);
-        read_uint8_n("DAT1Tx",CRC16,16);
-        readStop = read_uint8("DAT1Tx");   */
-        //}    
         read_uint8_n("DAT1Tx",dataBlock1new,1042);  
         readStart = dataBlock1new[0];
         for(i=0;i<1024;i++)
@@ -243,20 +221,8 @@ void DAT2()
 {
         uint8_t readStart =1, readStop;
         uint8_t dataBlock2new[1042];
-        //uint8_t dataBlock0[1024];
         uint8_t CRC16[16];
         int i;
-        //while (1)
-        //{
-        /*while(1){
-        readStart = read_uint8("DAT2Tx");
-        if(readStart == 0)
-                break;
-        }
-        read_uint8_n("DAT2Tx",dataBlock2,1024);
-        read_uint8_n("DAT2Tx",CRC16,16);
-        readStop = read_uint8("DAT2Tx");*/
-       // }       
        read_uint8_n("DAT2Tx",dataBlock2new,1042);  
         readStart = dataBlock2new[0];
         for(i=0;i<1024;i++)
@@ -269,7 +235,6 @@ void DAT3()
 {
         uint8_t readStart =1;//readStop;
         uint8_t dataBlock3new[1042];
-        //uint8_t dataBlock0[1024];
         uint8_t CRC16[16];
         int i;
         uint8_t newarray[4];
@@ -277,18 +242,6 @@ void DAT3()
         newarray[1] = 0x0;
         newarray[2] = 0x0;
         newarray[3] = 0x80;
-        //while(1){
-        /*while(1){
-        readStart = read_uint8("DAT3Tx");
-        fprintf(stderr,"readstart = %x\n",readStart);
-        if(readStart == 0)
-                break;
-        }
-        read_uint8_n("DAT3Tx",dataBlock3,1024);
-        read_uint8_n("DAT3Tx",CRC16,16);
-        readStop3 = read_uint8("DAT3Tx"); 
-        readStart =1;*/
-        //}      
         read_uint8_n("DAT3Tx",dataBlock3new,1042);  
         write_uint8_n("DAT0Rx",newarray,4);
        
@@ -304,29 +257,11 @@ DEFINE_THREAD(DAT1);
 DEFINE_THREAD(DAT2);
 DEFINE_THREAD(DAT3);
 
+// DATA Receiver functions
 void DAT0R()
 {
         uint8_t* crc;
         int i;
-        /*uint8_t DAT0Rxarray[1042];
-        //write_uint8("DAT0Rx",0x0);
-        //write_uint8_n("DAT0Rx",dataBlock0,1024);
-        DAT0Rxarray[0] = 0x0;
-        for(i=0;i<1024;i++)
-        {
-                //write_uint8("DAT0Rx",(dataBlock0[i] << 7));
-                DAT0Rxarray[i+1] = (dataBlock0[i] <<7);
-        }
-        crc = CRC_16(dataBlock0,1024);
-        //write_uint8_n("DAT0Rx",crc,16);
-        for(i=0;i<16;i++)
-        {
-                //write_uint8("DAT0Rx",(crc[i] <<7 ));
-                DAT0Rxarray[i+1025] = (crc[i]<<7);
-        }
-        
-        //write_uint8("DAT0Rx",0x80);
-        DAT0Rxarray[1041]=0x80;*/
         write_uint8_n("DAT0Rx",DAT0Rxarray,1042);
 }
 
@@ -334,50 +269,14 @@ void DAT1R()
 {
         uint8_t * crc;
         int i;
-        /*uint8_t DAT1Rxarray[1042];
-        //write_uint8("DAT1Rx",0x0);
-        DAT1Rxarray[0]=0x0;
-                        //write_uint8_n("DAT1Rx",dataBlock1,1024);
-                        for(i=0;i<1024;i++)
-                        {
-                                //write_uint8("DAT1Rx",(dataBlock1[i] << 7));
-                                DAT1Rxarray[i+1] = (dataBlock1[i] << 7);
-                        }
-                        crc = CRC_16(dataBlock1,1024);
-                        //write_uint8_n("DAT1Rx",crc,16);
-                        for(i=0;i<16;i++)
-                        {
-                                //write_uint8("DAT1Rx",(crc[i] << 7));
-                                DAT1Rxarray[i+1025] = crc[i] << 7;
-                        }
-                        //write_uint8("DAT1Rx",0x80);
-                        DAT1Rxarray[1041] = 0x80;*/
-                        write_uint8_n("DAT1Rx",DAT1Rxarray,1042);
+        write_uint8_n("DAT1Rx",DAT1Rxarray,1042);
 }
 
 void DAT2R()
 {
         uint8_t * crc;
         int i;
-        /*uint8_t DAT2Rxarray[1042];
-       // write_uint8("DAT2Rx",0x0);
-       DAT2Rxarray[0] = 0x0; 
-                        //write_uint8_n("DAT2Rx",dataBlock2,1024);
-                        for(i=0;i<1024;i++)
-                        {
-                                //write_uint8("DAT2Rx",(dataBlock2[i] << 7));
-                                DAT2Rxarray[i+1] = (dataBlock2[i] << 7);
-                        }
-                        crc = CRC_16(dataBlock2,1024);
-                        //write_uint8_n("DAT2Rx",crc,16);
-                        for(i=0;i<16;i++)
-                        {
-                                //write_uint8("DAT2Rx",(crc[i]<<7));
-                                DAT2Rxarray[i+1025] = (crc[i] << 7);
-                        }
-                        //write_uint8("DAT2Rx",0x80);
-                        DAT2Rxarray[1041] = 0x80;*/
-                        write_uint8_n("DAT2Rx",DAT2Rxarray,1042);
+        write_uint8_n("DAT2Rx",DAT2Rxarray,1042);
 
 }
 
@@ -385,24 +284,6 @@ void DAT3R()
 {
         uint8_t * crc;
         int i;
-        /*uint8_t DAT3Rxarray[1042];
-        //write_uint8("DAT3Rx",0x0);
-        DAT3Rxarray[0] = 0x0;
-        //write_uint8_n("DAT3Rx",dataBlock3,1024);
-        for(i=0;i<1024;i++)
-        {
-                //write_uint8("DAT3Rx",(dataBlock3[i] << 7));
-                DAT3Rxarray[i+1] = (dataBlock3[i]<<7);
-        }
-        crc = CRC_16(dataBlock3,1024);
-        //write_uint8_n("DAT3Rx",crc,16);
-        for(i=0;i<16;i++)
-        {
-                //write_uint8("DAT3Rx",(crc[i] <<7));
-                DAT3Rxarray[i+1025] = (crc[i]<<7);
-        }
-        //write_uint8("DAT3Rx",0x80);
-        DAT3Rxarray[1041] = 0x80;*/
         write_uint8_n("DAT3Rx",DAT3Rxarray,1042); 
         flagdat3 = 1;
 }
@@ -411,7 +292,7 @@ DEFINE_THREAD(DAT0R);
 DEFINE_THREAD(DAT1R);
 DEFINE_THREAD(DAT2R);
 DEFINE_THREAD(DAT3R);
-
+// Main function for SD card
 void sdcard()
 {
         int i,j,k;
@@ -431,16 +312,11 @@ void sdcard()
         unsigned int temp_ocr;
         uint8_t readStart,readStop;
         uint8_t dataBlock[4096];
-        //uint8_t dataBlock0[1024], dataBlock1[1024], dataBlock2[1024], dataBlock3[1024];
         uint8_t dataBlocks[100][4096];
         //uint8_t **dataBlocks = NULL;
         uint8_t CRC16[16];
         uint8_t responsearray[48];
         uint8_t bigresponsearray[136];
-        //uint8_t DAT0Rxarray[1042];
-        //uint8_t DAT1Rxarray[1042];
-        //uint8_t DAT2Rxarray[1042];
-        //uint8_t DAT3Rxarray[1042];
         uint8_t* crc;
         int dataPointer = 0, datapt =0;
         long int rows;
@@ -450,9 +326,6 @@ void sdcard()
         newarray[1] = 0x0;
         newarray[2] = 0x0;
         newarray[3] = 0x80;
-       //dataBlocks = malloc(100 * sizeof(uint8_t *));
-        //for(rows=0;rows<100;rows++)
-        //        dataBlocks[i] = malloc(4096 * sizeof(uint8_t));
         sdCard.cardState = INACTIVE_STATE;
         sdCard.status = 0;
         sdCard.rca = 0x1;
@@ -461,29 +334,12 @@ void sdcard()
         sdCard.CSD[0]=0;
         sdCard.CSD[1]=0;
         sdCard.ocr = 0x40ff8000;
-        //CID[0]= 0x0353445353303847;
-        //CID[1]= 0x803c023c6100e652;
-        /*PTHREAD_DECL(DAT0);
-        PTHREAD_CREATE(DAT0);
-        PTHREAD_DECL(DAT1);
-        PTHREAD_CREATE(DAT1);
-        PTHREAD_DECL(DAT2);
-        PTHREAD_CREATE(DAT2);
-        PTHREAD_DECL(DAT3);
-        PTHREAD_CREATE(DAT3);*/
-        /*PTHREAD_JOIN(DAT0);
-        PTHREAD_JOIN(DAT1);
-        PTHREAD_JOIN(DAT2);
-        PTHREAD_JOIN(DAT3);*/
-
         while (1)
         {
         crc7 = 0;
         crc7Resp = 0;
         //Reading command line
         read_uint8_n("commandTx",command,48);
-        //for(i=47;i>=0;i--)
-          //      fprintf(stderr,"%x",command[i]);
         fprintf(stderr,"\n");
         //from array to a single variable conversion
         for(i=0;i<48;i++)
@@ -721,8 +577,6 @@ void sdcard()
                 write_uint8_n("responseRx",responsearray,48);
                 if(resp == RESP_R1b)
                 {
-                        //write_uint8("DAT0Rx",0x0);
-                        //write_uint8("DAT0Rx",0x80);
                         write_uint8_n("DAT0Rx",newarray,4);
                 }
                 //fprintf(stderr,"\n");
@@ -878,8 +732,6 @@ void sdcard()
                 nextState = PRG_STATE;
                 nextState = TRAN_STATE;
                 
-              //for(i=0;i<4095;i++)
-                //fprintf(stderr,"%x",dataBlock[i]);
                 dataPointer ++;
               }
               else
@@ -988,10 +840,7 @@ void sdcard()
                         PTHREAD_CREATE(DAT2R);
                         PTHREAD_DECL(DAT3R);
                         PTHREAD_CREATE(DAT3R);
-                        //write_uint8("DAT0Rx",0x0);
-                        //write_uint8("DAT0Rx",0x0);
-                        //write_uint8("DAT0Rx",0x0);
-                        //write_uint8("DAT0Rx",0x80);  
+                        
                         while(flagdat3 == 0){
                                 //fprintf(stderr,"flagdata = %x",flagdat3);        
                         }
@@ -1031,8 +880,6 @@ void sdcard()
                 nextState = PRG_STATE;
                 nextState = TRAN_STATE;
                 
-              //for(i=0;i<4095;i++)
-                //fprintf(stderr,"%x",dataBlock[i]);
                 dataPointer ++;
               }
         
@@ -1052,85 +899,21 @@ void sdcard()
                                 //fprintf(stderr,"%x%x%x%x\n",dataBlock0[i],dataBlock1[i],dataBlock2[i],dataBlock3[i]);
                         }
                         datapt =0;
-                        /*write_uint8("DAT0Rx",0x0);
-                        //write_uint8_n("DAT0Rx",dataBlock0,1024);
-                        for(i=0;i<1024;i++)
-                        {
-                                write_uint8("DAT0Rx",(dataBlock0[i] << 7));
-                        }
                         
-                        crc = CRC_16(dataBlock0,1024);
-                        //write_uint8_n("DAT0Rx",crc,16);
-                        for(i=0;i<16;i++)
-                        {
-                                write_uint8("DAT0Rx",(crc[i]<<7));
-                        }
-
-                        write_uint8("DAT0Rx",0x80);
-
-                        write_uint8("DAT1Rx",0x0);
-                        //write_uint8_n("DAT1Rx",dataBlock1,1024);
-                        for(i=0;i<1024;i++)
-                        {
-                                write_uint8("DAT1Rx",(dataBlock1[i] << 7));
-                        }
-                        
-                        crc = CRC_16(dataBlock1,1024);
-                        //write_uint8_n("DAT1Rx",crc,16);
-                        for(i=0;i<16;i++)
-                        {
-                                write_uint8("DAT1Rx",(crc[i]<<7));
-                        }
-                        write_uint8("DAT1Rx",0x80);
-
-                        write_uint8("DAT2Rx",0x0);
-                        //write_uint8_n("DAT2Rx",dataBlock2,1024);
-                        for(i=0;i<1024;i++)
-                        {
-                                write_uint8("DAT2Rx",(dataBlock2[i] <<7));
-                        }
-                        crc = CRC_16(dataBlock2,1024);
-                        //write_uint8_n("DAT2Rx",crc,16);
-                        for(i=0;i<16;i++)
-                        {
-                                write_uint8("DAT2Rx",(crc[i]<<7));
-                        }
-                        write_uint8("DAT2Rx",0x80);
-
-                        write_uint8("DAT3Rx",0x0);
-                        //write_uint8_n("DAT3Rx",dataBlock3,1024);
-                        for(i=0;i<1024;i++)
-                        {
-                                write_uint8("DAT3Rx",(dataBlock3[i]<<7));
-                        }
-                        crc = CRC_16(dataBlock3,1024);
-                        //write_uint8_n("DAT3Rx",crc,16);
-                        for(i=0;i<16;i++)
-                        {
-                                write_uint8("DAT3Rx",(crc[i]<<7));
-                        }
-                        write_uint8("DAT3Rx",0x80);   */ 
-                         //write_uint8("DAT0Rx",0x0);
                         DAT0Rxarray[0] = 0x0;
-                        //write_uint8_n("DAT0Rx",dataBlock0,1024);
                         for(i=0;i<1024;i++)
                         {
                                 //write_uint8("DAT0Rx",(dataBlock0[i] << 7));
                                 DAT0Rxarray[i+1] = (dataBlock0[i] <<7);
                         }
                         crc = CRC_16(dataBlock0,1024);
-                        //write_uint8_n("DAT0Rx",crc,16);
                         for(i=0;i<16;i++)
                         {
                                 //write_uint8("DAT0Rx",(crc[i] <<7 ));
                                 DAT0Rxarray[i+1025] = (crc[i]<<7);
                         }
                         DAT0Rxarray[1041]=0x80;
-                        //write_uint8("DAT0Rx",0x80);
-
-                        //write_uint8("DAT1Rx",0x0);
                         DAT1Rxarray[0]=0x0;
-                        //write_uint8_n("DAT1Rx",dataBlock1,1024);
                         for(i=0;i<1024;i++)
                         {
                                 //write_uint8("DAT1Rx",(dataBlock1[i] << 7));
@@ -1147,7 +930,6 @@ void sdcard()
                         DAT1Rxarray[1041] = 0x80;
                         //write_uint8("DAT2Rx",0x0);
                         DAT2Rxarray[0] = 0x0;
-                        //write_uint8_n("DAT2Rx",dataBlock2,1024);
                         for(i=0;i<1024;i++)
                         {
                                 //write_uint8("DAT2Rx",(dataBlock2[i] << 7));
@@ -1163,9 +945,6 @@ void sdcard()
                         //write_uint8("DAT2Rx",0x80);
                         DAT2Rxarray[1041] = 0x80;
                         DAT3Rxarray[0] = 0x0;
-                        //write_uint8("DAT3Rx",0x0);
-
-                        //write_uint8_n("DAT3Rx",dataBlock3,1024);
                         for(i=0;i<1024;i++)
                         {
                                 //write_uint8("DAT3Rx",(dataBlock3[i] << 7));
@@ -1239,23 +1018,6 @@ void sdcard()
               }
               else
               {
-               // fprintf(stderr,"Here at 24\n");
-                /*readStart = read_uint8("DAT0Tx");
-                read_uint8_n("DAT0Tx",dataBlock0,1024);
-                read_uint8_n("DAT0Tx",CRC16,16);
-                readStop = read_uint8("DAT0Tx");
-                readStart = read_uint8("DAT1Tx");
-                read_uint8_n("DAT1Tx",dataBlock1,1024);
-                read_uint8_n("DAT1Tx",CRC16,16);
-                readStop = read_uint8("DAT1Tx");
-                readStart = read_uint8("DAT2Tx");
-                read_uint8_n("DAT2Tx",dataBlock2,1024);
-                read_uint8_n("DAT2Tx",CRC16,16);
-                readStop = read_uint8("DAT2Tx");
-                readStart = read_uint8("DAT3Tx");
-                read_uint8_n("DAT3Tx",dataBlock3,1024);
-                read_uint8_n("DAT3Tx",CRC16,16);
-                readStop = read_uint8("DAT3Tx");*/
                 PTHREAD_DECL(DAT0);
                 PTHREAD_CREATE(DAT0);
                 PTHREAD_DECL(DAT1);
@@ -1265,17 +1027,11 @@ void sdcard()
                 PTHREAD_DECL(DAT3);
                 PTHREAD_CREATE(DAT3);
                 
-                //write_uint8("DAT0Rx",0x0);
-                //write_uint8("DAT0Rx",0x0);
-                //write_uint8("DAT0Rx",0x0);
-                //write_uint8("DAT0Rx",0x80); 
-                //fprintf(stderr,"readstop = %x\n",readStop3);
                 while (readStop3 == 0)
                 {
                         
                 }
                 
-               // fprintf(stderr,"readstop = %x\n",readStop3);
                 readStop3 = 0;
                 nextState = PRG_STATE;
                 
@@ -1298,14 +1054,10 @@ void sdcard()
                 {
                         dataBlocks[dataPointer][i] = dataBlock[i]; 
                 }
-               // for(i=0;i<4096;i=i+8)
-               // {
-               //    fprintf(stderr,"%x%x%x%x%x%x%x%x\n",dataBlock[i],dataBlock[i+1],dataBlock[i+2],dataBlock[i+3],dataBlock[i+4],dataBlock[i+5],dataBlock[i+6],dataBlock[i+7]);
-               // }
+               
                 dataPointer ++;
-               // fprintf(stderr,"Here at the end\n");
               }
-              //fprintf(stderr,"Here at 66\n");
+              
 
         }
         //CMD25 Multiple Write
@@ -1337,22 +1089,7 @@ void sdcard()
                         }
                         else
                         {
-                                /*readStart = read_uint8("DAT0Tx");
-                                read_uint8_n("DAT0Tx",dataBlock0,1024);
-                                read_uint8_n("DAT0Tx",CRC16,16);
-                                readStop = read_uint8("DAT0Tx");
-                                readStart = read_uint8("DAT1Tx");
-                                read_uint8_n("DAT1Tx",dataBlock1,1024);
-                                read_uint8_n("DAT1Tx",CRC16,16);
-                                readStop = read_uint8("DAT1Tx");
-                                readStart = read_uint8("DAT2Tx");
-                                read_uint8_n("DAT2Tx",dataBlock2,1024);
-                                read_uint8_n("DAT2Tx",CRC16,16);
-                                readStop = read_uint8("DAT2Tx");
-                                readStart = read_uint8("DAT3Tx");
-                                read_uint8_n("DAT3Tx",dataBlock3,1024);
-                                read_uint8_n("DAT3Tx",CRC16,16);
-                                readStop = read_uint8("DAT3Tx");*/
+                                
                                 PTHREAD_DECL(DAT0);
                                 PTHREAD_CREATE(DAT0);
                                 PTHREAD_DECL(DAT1);
@@ -1361,11 +1098,6 @@ void sdcard()
                                 PTHREAD_CREATE(DAT2);
                                 PTHREAD_DECL(DAT3);
                                 PTHREAD_CREATE(DAT3);
-                                //write_uint8("DAT0Rx",0x0);
-                                //write_uint8("DAT0Rx",0x0);
-                                //write_uint8("DAT0Rx",0x0);
-                                //write_uint8("DAT0Rx",0x80);
-                                //write_uint8_n("DAT0Rx",newarray,4);
                                 while (readStop3 == 0)
                                 {
                                         
@@ -1373,10 +1105,6 @@ void sdcard()
                                 //fprintf(stderr,"readstop = %x\n",readStop3);
                                 readStop3 = 0;
                                 nextState = PRG_STATE;
-                                //write_uint8("DAT0Rx",0x0);
-                                //write_uint8("DAT0Rx",0x0);
-                                //write_uint8("DAT0Rx",0x0);
-                                //write_uint8("DAT0Rx",0x80);
                                 nextState = TRAN_STATE;
                                 for(i=0;i<1024;i++)
                                 {
@@ -1392,16 +1120,12 @@ void sdcard()
                                 {
                                         dataBlocks[dataPointer][i] = dataBlock[i]; 
                                 }
-                                //for(i=0;i<4095;i++)
-                                  // fprintf(stderr,"%x",dataBlock[i]);
-                                  //fprintf(stderr,"Here at the end 25\n");
                                 dataPointer ++;
 
                         }
                 }
 
         }
-        //fprintf(stderr,"\n");
         //State update
         sdCard.cardState = nextState;
         tempStatus = sdCard.status & (~ ST_CARD_STATE);

@@ -107,6 +107,10 @@ int ReadWriteSDHCRegister(long int rwbar, int regSize, long int phyAdd, int data
         }
         return returnData;
 }
+
+//This function is used for checking the interrupts
+//The data shows which interrupt to enable
+
 void EnableInterruptStatusRegistersAndCheckInterruptLine(int data)
 {
         int flag = 0;
@@ -144,6 +148,9 @@ void EnableInterruptStatusRegistersAndCheckInterruptLine(int data)
         // Interrrupt status is printed here
         fprintf(stderr, "HOST:Normal Interrupt status is %x\n", status);
 }
+
+// Sends General Command to SD Host controller.
+
 void SendGeneralCommand(int n)
 {
 uint8_t interruptLine;
@@ -278,6 +285,9 @@ int flag;
         //}while(flag==1);
         //while(1){}
 }
+
+// Sends Application Specific Command to SD Host controller.
+
 void SendApplicationSpecificCommand(int n)
 {
         int data;
@@ -293,10 +303,10 @@ void SendApplicationSpecificCommand(int n)
 		case 411:data = 0;
                  	break;
 
-		case 412:data = (1<<30) | (1<<28) | (1<<24) | OCR;
+		case 412:data = (1<<30) | (1<<28) | (0<<24) | OCR;
 		//HCS = 1(High capacity support) 
                 //XPC =1(maximum performance) 
-                //S18R =1 (Switching to 1.8V)
+                //S18R =0 (Not Switching to 1.8V)
 			break;
 		
                 default:data =0;
@@ -317,6 +327,10 @@ void SendApplicationSpecificCommand(int n)
         EnableInterruptStatusRegistersAndCheckInterruptLine(0x1);//Checking Command Complete Interrupt			
         ack = ReadWriteSDHCRegister(0,2, (SDBase + NormalInterruptStatus), 0x1);//Clear Command Complete interrupt
 }
+
+//Sets up the SD Card to write data into the flash.
+//Supports single and multiple BlockWrite.
+
 int WriteSingleOrMultiple512BytesBlock(int blockCount, int * writeData)
 //Sets up the SD Card to write data into the flash.
 //Supports single and multiple BlockWrite.
@@ -425,6 +439,8 @@ int ReadSingleOrMultiple512BytesBlock(int blockCount)
         return flag;
 }
 
+//   Sends a sequence of commands required to initialize the SD Card.
+
 int ExecuteInitializationSequence()
 { 
         int response = 0;
@@ -527,19 +543,17 @@ int ExecuteInitializationSequence()
 	return flag;
 }
 
-int writeAndRead(long int addr, uint32_t data, char* regName,  int regSize)
-{
-  long int rwbar=0;
-  long int phyAdd=(SDBase+addr);
-  fprintf(stderr,"\r\n#\r\nRegister under test:%s, data written is 0x%lx\r\n",regName,data);  
-  int writeAck=ReadWriteSDHCRegister(0, regSize, phyAdd, data);
-  fprintf(stderr, "write acknowledgment for  register is 0x%x\r\n",writeAck);
-  int readData=ReadWriteSDHCRegister(1, regSize, phyAdd, 0);
-  fprintf(stderr, "data read from  register %s is 0x%x\r\n", regName,readData);
-}
 
 
 DEFINE_THREAD(sdcard);
+
+
+// Sequence of operations performed in main function:
+// 1. Initialization of the card is done.
+// 2. If initialized then a single block is written.
+// 3. After successful write, the block is read to check memory.
+// 4. Multiple Blocks are written into the memory
+// 5. Multiple Blocks are read from the memory to check memory
 
 
 int main(int argc, char* argv[])
