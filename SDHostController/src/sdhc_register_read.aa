@@ -1,0 +1,29 @@
+$module [sdhc_register_read] $in(address:$uint<8> bytemask:$uint<4>) $out(dataOut:$uint<32>) $is
+{
+    $branchblock[readloop]
+    {
+        $merge $entry loopback
+            $phi I:= ZERO_8 $on $entry next_I $on loopback
+            $phi addressTemp := address $on $entry next_address $on loopback
+            $phi bytemaskTemp := bytemask $on $entry next_bytemask $on loopback
+            $phi dataTemp := ZERO_32 $on $entry next_data $on loopback
+        $endmerge
+            $call readSDHCRegisters(addressTemp) (registerData)
+            $volatile readdata := ($mux (bytemaskTemp [] 3) registerData ZERO_8)
+            $volatile next_data := ($concat ($slice dataTemp 23 0) readdata)
+            $volatile next_bytemask:= (bytemaskTemp << 1)
+            $volatile next_address:= (addressTemp + 1)
+            $volatile next_I:=(I+1)
+        $if(next_I < 4)$then
+            $place[loopback]
+        $endif
+    }(next_data => data)
+    dataOut := data
+}
+
+// Module for reading form registers
+$module [readSDHCRegisters]
+$in (address:$uint<8>) $out (data:$uint<8>) $is
+{
+	data:= sdhcRegisters[address]
+}

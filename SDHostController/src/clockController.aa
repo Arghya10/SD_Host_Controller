@@ -1,0 +1,17 @@
+$module [clockController] $in () $out () $is
+{
+    $branchblock[clockController]
+    {
+        $call readSDHCRegisters (ClockControl) (clockControlVal0)
+		$call readSDHCRegisters ({ClockControl + 1}) (clockControlVal1)
+		$volatile frequencyDivider:= ($concat ($slice clockControlVal0 7 6) clockControlVal1)
+		$if(frequencyDivider == 0)$then
+			frequencySelect:= ($bitcast ($uint<20>) 2)
+		$else
+			frequencySelect:= (($bitcast ($uint<20>) frequencyDivider) * 2)
+		$endif
+		$volatile tempclockcontroller := ($concat ($slice clockControlVal0 7 2) clkStable (clockControlVal0 [] 0))
+		$call writeSDHCRegisters (ClockControl tempclockcontroller) ()
+		sdClkEnable:= (tempclockcontroller [] 2)
+    }
+} 

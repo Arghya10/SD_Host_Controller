@@ -1,0 +1,91 @@
+$module[bufferDataPortCheckWrite] $in() $out(transferComplete:$uint<8>) $is
+{
+    $branchblock[writeBufferDataPort]
+    {
+        		$merge $entry loopBuffer
+					$phi B:= ($bitcast ($uint<8>) 0) $on $entry next_B $on loopBuffer
+				$endmerge
+					$call readSDHCRegisters((BufferDataPort + B)) (tempBuf)
+					dataBuffer := tempBuf
+					$volatile next_B := (B + 1)
+				$if(next_B < 4)$then
+					$place[loopBuffer]
+				$endif
+				txBufferPointer:= (txBufferPointer + 4)
+				$if(txBufferPointer == 512)$then
+					//All Blocks are Written 
+					$call readSDHCRegisters ({PresentState + 1}) (tempPresentState_1_3) 
+					$call writeSDHCRegisters ({PresentState + 1} (tempPresentState_1_3 | _hfb)) ()
+					//Block Count Enable or Disable is checked in Transfer Mode register
+					$call readSDHCRegisters(Transfer) (transferRegVal) 
+					singleMultipleBlock:= ($bitreduce | (transferRegVal & _h20))//1:Multiple Block 0:Single Block
+					blockCountEnable:= (($bitreduce | (transferRegVal & _h02)) & singleMultipleBlock)//1-Enable 0-Disable only needed for multipleblock
+					$merge $entry loopBlock
+						$phi C:= ONE_8 $on $entry next_C $on loopBlock
+						$phi newBlockCount := ($bitcast ($uint<16>)0) $on $entry blockCount $on loopBlock
+					$endmerge
+						$call readSDHCRegisters ((BlockCount + C)) (newBlockCountTemp)
+						$volatile blockCount := (($slice newBlockCount 7 0) && newBlockCountTemp )
+						$volatile next_C := (C-1)
+					$if(C != 0)$then
+						$place[loopBlock]
+					$endif
+					$volatile blockCountTrue:= (blockCount == 1)//1:Last block 
+					$volatile lastBlock:= ((~singleMultipleBlock) | (blockCountEnable & blockCountTrue)) //1: last Block sent 0:Not last Block
+					$call dataTx (lastBlock blockCountEnable blockCount) (blockCountNext transferComplete)
+					$call writeSDHCRegisters ({BlockCount + 1} ($slice blockCountNext 15 8)) ()
+					$call writeSDHCRegisters (BlockCount ($slice blockCountNext 7 0)) ()
+					normalInterruptFlag1:= (normalInterruptFlag1 | _h02)
+					errorInterruptFlag1:= (errorInterruptFlag1 | _h60)
+				$endif
+    }
+}
+
+$module[bufferDataPortCheckRead] $in() $out(dataErrorInterruptStatusVar:$uint<8> readDataTransferComplete:$uint<8>) $is
+{
+	$branchblock[readBufferDataPort]
+	{
+				$merge $entry loopBufferWrite
+					$phi D:= ($bitcast ($uint<8>) 0) $on $entry next_D $on loopBufferWrite
+				$endmerge
+					tempBuf2:= dataBuffer
+					$call writeSDHCRegisters((BufferDataPort + D) tempBuf2) ()
+					$volatile next_D := (D + 1)
+				$if(next_D < 4)$then
+					$place[loopBufferWrite]
+				$endif
+				rxBufferPointer:= (rxBufferPointer - 4)
+				$call readSDHCRegisters(Transfer) (transferRegVal2)
+				singleMultipleReadBlock:= ($bitreduce | (transferRegVal2 & _h20))
+				$if(rxBufferPointer == 0)$then
+					$call readSDHCRegisters ({PresentState + 1}) (tempPresentState_1_4) 
+					$call writeSDHCRegisters ({PresentState + 1} (tempPresentState_1_4 & _hf7)) ()
+					$if(singleMultipleReadBlock == 1)$then
+						readBlockCountEnable:= (($bitreduce | (transferRegVal2 & _h02)) & singleMultipleReadBlock)//1-Enable 0-Disable only needed for multipleblock
+						$merge $entry loopBlock2
+							$phi E:= ONE_8 $on $entry next_E $on loopBlock2
+							$phi readNewBlockCount := ($bitcast ($uint<16>)0) $on $entry readBlockCount $on loopBlock2
+						$endmerge
+							$call readSDHCRegisters ((BlockCount + E)) (readnewBlockCountTemp)
+							$volatile readBlockCount := (($slice readNewBlockCount 7 0) && readnewBlockCountTemp )
+							$volatile next_E := (E-1)
+						$if(E != 0)$then
+							$place[loopBlock2]
+						$endif
+						readBlockCountTrue:= (readBlockCount == 1)//1:Last block
+						readLastBlock:= (readBlockCountEnable & readBlockCountTrue) //1: last Block sent 0:Not last Block
+						$if(readBlockCount !=0)$then
+							newReadBlockCount:= (readBlockCount -1)
+							$call dataRx (readLastBlock) (dataErrorInterruptStatusVar)
+							dataRxEnrty1:= ZERO_1
+							dataRxEnrty2:= ONE_1
+							$call writeSDHCRegisters ({BlockCount + 1} ($slice newReadBlockCount 15 8)) ()
+							$call writeSDHCRegisters (BlockCount ($slice newReadBlockCount 7 0)) ()
+							readDataTransferComplete:= ($mux readLastBlock ($bitcast ($uint<8>)2) ZERO_8)
+							normalInterruptFlag1:= (normalInterruptFlag1 | _h02)
+							errorInterruptFlag1:= (errorInterruptFlag1 | _h60)
+						$endif
+					$endif
+				$endif
+	}
+}

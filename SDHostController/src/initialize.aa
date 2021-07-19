@@ -1,0 +1,21 @@
+$module [initialize] $in() $out() $is
+{
+    //Initializing Global Flags
+    SDHC_to_IRC_INT := ZERO_1
+	oe := ZERO_1
+	busy := ZERO_1
+	readyClockCountEnable := ONE_1
+	normalInterruptFlag1:= _hFF
+	normalInterruptFlag2:= _hFF
+	errorInterruptFlag1:= _hFF
+	errorInterruptFlag2:= _hFF
+	txBufferPointer:= ($bitcast ($uint<10>) 0)
+	rxBufferPointer:= ($bitcast ($uint<10>) 0)
+	dataRxEnrty1:= ZERO_1
+	dataRxEnrty2:= ZERO_1
+	dataErrorInterruptStatus:=ZERO_8
+
+	//Initialize The registers
+	$call resetRegisters (ZERO_2) ()
+	
+}
