@@ -1,0 +1,20 @@
+$module [bufferReadWriteCheck] $in() $out (bufferReadReady:$uint<8> bufferWriteReady:$uint<8>) $is
+{
+    $branchblock[Check]
+    {
+            //Buffer Read Enable
+			$if(rxBufferPointer > 0)$then
+				$call readSDHCRegisters ({PresentState + 1}) (tempPresentState_1_1) 
+				$call writeSDHCRegisters ({PresentState + 1} (tempPresentState_1_1 | _h08)) ()
+				bufferReadReady:= (ZERO_8 | _h20)
+				normalInterruptFlag1:= (normalInterruptFlag1 | _h20)
+			$endif
+			//Buffer Write Enable
+			$if(txBufferPointer<512)$then
+				$call readSDHCRegisters ({PresentState + 1}) (tempPresentState_1_2) 
+				$call writeSDHCRegisters ({PresentState + 1} (tempPresentState_1_2 | _h04)) ()
+				bufferWriteReady:= (ZERO_8 | _h10)
+				normalInterruptFlag1:= (normalInterruptFlag1 | _h10)
+			$endif
+    }
+}

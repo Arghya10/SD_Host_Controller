@@ -2,6 +2,14 @@ The top module which is always running:
 	sdhc.aa
 The module which generates commands:
 	command_generator.aa
+The module which generates Interrupts:
+	interruptGeneration.aa
+The Initializing Module:
+	initialize.aa
+The module to check buffer read or write availabilty:
+	bufferReadWriteCheck.aa
+The module to check writing into buffer data port write and read:
+	bufferDataPortCheck.aa
 The Data Receiver module:
 	dataRx.aa
 The Data Transmitter module:
@@ -10,5 +18,7 @@ The module for generating crc7:
 	generate_crc_7.aa
 The  module for writing into the registers:
 	sdhc_register_write.aa
+The  module for reading from the registers:
+	sdhc_register_read.aa
 All declarations are made here:
 	decls.aa

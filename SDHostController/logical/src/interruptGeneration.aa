@@ -1,0 +1,53 @@
+$module [interruptGeneration] $in(dataErrorInterruptStatusVar1:$uint<8> dataErrorInterruptStatusVar:$uint<8> errorInterruptStatusVar1:$uint<8> errorInterruptStatusVar2:$uint<8> readDataTransferComplete:$uint<8> dataTransferComplete:$uint<8> transferComplete:$uint<8> bufferReadReady:$uint<8> bufferWriteReady:$uint<8> normalInterruptStatusVar1:$uint<8>) $out() $is
+{
+    $branchblock[interruptBlock]
+    {
+            //Error Interrupt Status and Normal Interrupt Status stored
+			dataErrorInterruptStatus:= ($excmux dataRxEnrty1 dataErrorInterruptStatusVar1 dataRxEnrty2 dataErrorInterruptStatusVar ((~dataRxEnrty1)&(~dataRxEnrty2)) ZERO_8)
+			$merge $entry loopError
+				$phi S:= ONE_8 $on $entry next_S $on loopError
+				$phi readErrorInterruptReg := ($bitcast ($uint<16>)0) $on $entry errorInterruptReg $on loopError
+				$phi readErrorInterruptEnableReg := ($bitcast ($uint<16>)0) $on $entry errorInterruptEnableReg $on loopError
+				$phi readErrorInterruptSignalEnableReg := ($bitcast ($uint<16>)0) $on $entry errorInterruptSignalEnableReg $on loopError
+				$phi readNormalInterruptEnableReg := ($bitcast ($uint<16>)0) $on $entry normalInterruptEnableReg $on loopError
+			$endmerge
+				$call readSDHCRegisters ((ErrorInterruptStatus + S)) (errorInterruptRegTemp)
+				$volatile errorInterruptReg := (($slice readErrorInterruptReg 7 0) && errorInterruptRegTemp )
+				$call readSDHCRegisters ((ErrorInterruptStatusEnable + S)) (errorInterruptEnableRegTemp)
+				$volatile errorInterruptEnableReg := (($slice readErrorInterruptEnableReg 7 0) && errorInterruptEnableRegTemp )
+				$call readSDHCRegisters ((ErrorInterruptSignalEnable + S)) (errorInterruptSignalEnableRegTemp)
+				$volatile errorInterruptSignalEnableReg := (($slice readErrorInterruptSignalEnableReg 7 0) && errorInterruptSignalEnableRegTemp )
+				$call readSDHCRegisters ((NormalInterruptStatusEnable + S)) (normalInterruptEnableRegTemp)
+				$volatile normalInterruptEnableReg := (($slice readNormalInterruptEnableReg 7 0) && normalInterruptEnableRegTemp )
+				$volatile next_S := (S-1)
+			$if(S != 0)$then
+				$place[loopError]
+			$endif
+			$volatile errorInterruptRegVal0 := ($slice errorInterruptReg 7 0)
+			$volatile errorInterruptRegVal1 := ($slice errorInterruptReg 15 8)
+			$volatile errorInterruptEnableVal0 := ($slice errorInterruptEnableReg 7 0)
+			$volatile errorInterruptEnableVal1 := ($slice errorInterruptEnableReg 15 8)
+			$volatile errorInterruptSignalEnableVal0 := ($slice errorInterruptSignalEnableReg 7 0)
+			$volatile errorInterruptSignalEnableVal1 := ($slice errorInterruptSignalEnableReg 15 8)
+			$volatile normalInterruptEnableVal0 := ($slice normalInterruptEnableReg 7 0)
+			$volatile normalInterruptEnableVal1 := ($slice normalInterruptEnableReg 15 8)
+			tempErrorReg0 := (((errorInterruptRegVal0 |  ($reduce | dataErrorInterruptStatus errorInterruptStatusVar1 )) & errorInterruptFlag1) & errorInterruptEnableVal0)
+			$call writeSDHCRegisters (ErrorInterruptStatus tempErrorReg0) ()
+			tempErrorReg1 := (((errorInterruptRegVal1 | errorInterruptStatusVar2) & errorInterruptFlag2) & errorInterruptEnableVal1)
+			$call writeSDHCRegisters ({ErrorInterruptStatus + 1} tempErrorReg1) ()
+			errorInterruptBit :=((($bitreduce | tempErrorReg0) | ($bitreduce | tempErrorReg1) ) && ($bitcast ($uint<7>)0))
+			$volatile checkInterruptEnable :=(($bitreduce | normalInterruptEnableVal0) | ($bitreduce | normalInterruptEnableVal1) )
+			$if(checkInterruptEnable == 1) $then
+				interrupt:= ($reduce & ($reduce | readDataTransferComplete dataTransferComplete transferComplete bufferReadReady bufferWriteReady normalInterruptStatusVar1) normalInterruptEnableVal0 normalInterruptFlag1)
+				$call writeSDHCRegisters (NormalInterruptStatus interrupt) ()
+				$call writeSDHCRegisters ({NormalInterruptStatus + 1} errorInterruptBit) ()
+				$call readSDHCRegisters (NormalInterruptSignalEnable) (tempNormalSignal)
+				interruptLine:= (tempNormalSignal & interrupt)
+				errorInterruptLine := ((tempErrorReg0 & errorInterruptSignalEnableVal0) | (tempErrorReg1 & errorInterruptSignalEnableVal1))
+				SDHC_to_IRC_INT:=(($bitreduce | interruptLine) | ($bitreduce | errorInterruptLine))
+			$else
+				$call writeSDHCRegisters (NormalInterruptStatus ZERO_8) ()
+				SDHC_to_IRC_INT:= ZERO_1
+			$endif
+    }
+}
