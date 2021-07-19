@@ -21,112 +21,99 @@
 // RW1C : module RW1C
 // RW   : Default
 
-$module [sdhc_register_write] $in(address:$uint<8> data:$uint<8>) $out() $is
+$module [sdhc_register_write] $in(address:$uint<8> dataIn:$uint<32> bytemask:$uint<4>) $out() $is
 {
-
-	$branchblock[write_register]
+	$branchblock[addresscheckloop]
 	{
-		//$rreport( Show following address data)
-	$switch address
-	$when {BlockSize + 1} $then $call writeSDHCRegisters (address (data & _h7f)) () //sdhcRegisters[address]:= (data & _h7f)
+		$merge $entry startloop 
+			$phi addressTemp := address $on $entry next_address $on startloop
+			$phi bytemaskTemp := bytemask $on $entry next_bytemask $on startloop
+			$phi dataTemp := dataIn $on $entry next_data $on startloop
+			$phi I:= ZERO_8 $on $entry next_I $on startloop
+		$endmerge
+		data := ($slice dataTemp 31 24)
+		$rreport( Out following addressTemp bytemaskTemp data)
+		$if(bytemaskTemp [] 3)$then
+			$branchblock[write_register]
+			{
+			$rreport( Show following addressTemp data)
+			$switch addressTemp
+			$when {BlockSize + 1} $then $call writeSDHCRegisters (addressTemp (data & _h7f)) () //sdhcRegisters[addressTemp]:= (data & _h7f)
 
-	$when Transfer $then $call writeSDHCRegisters (address (data & _h3f)) () //sdhcRegisters[address]:= (data & _h3f)
-	$when {Transfer + 1} $then $call writeSDHCRegisters (address ZERO_8) () //sdhcRegisters[address]:= ZERO_8
+			$when Transfer $then $call writeSDHCRegisters (addressTemp (data & _h3f)) () //sdhcRegisters[addressTemp]:= (data & _h3f)
+			$when {Transfer + 1} $then $call writeSDHCRegisters (addressTemp ZERO_8) () //sdhcRegisters[addressTemp]:= ZERO_8
 
-	$when Command $then $call writeSDHCRegisters (address (data & _hfb)) () //sdhcRegisters[address]:= (data & _hfb)
-	$when {Command + 1} $then $call writeSDHCRegisters (address (data & _h3f)) ()//sdhcRegisters[address]:= (data & _h3f)
-	
-	$when Response0 $then $null
-	$when {Response0 + 1} $then $null
-	$when {Response0 + 2} $then $null
-	$when {Response0 + 3} $then $null
-	$when Response2 $then $null
-	$when {Response2 + 1} $then $null
-	$when {Response2 + 2} $then $null
-	$when {Response2 + 3} $then $null
-	$when Response4 $then $null
-	$when {Response4 + 1} $then $null
-	$when {Response4 + 2} $then $null
-	$when {Response4 + 3} $then $null
-	$when Response6 $then $null
-	$when {Response6 + 1} $then $null
-	$when {Response6 + 2} $then $null
-	$when {Response6 + 3}  $then $null
+			$when Command $then $call writeSDHCRegisters (addressTemp (data & _hfb)) () //sdhcRegisters[addressTemp]:= (data & _hfb)
+			$when {Command + 1} $then $call writeSDHCRegisters (addressTemp (data & _h3f)) ()//sdhcRegisters[addressTemp]:= (data & _h3f)
+			
+			$when Response0 $then $null
+			$when {Response0 + 1} $then $null
+			$when {Response0 + 2} $then $null
+			$when {Response0 + 3} $then $null
+			$when Response2 $then $null
+			$when {Response2 + 1} $then $null
+			$when {Response2 + 2} $then $null
+			$when {Response2 + 3} $then $null
+			$when Response4 $then $null
+			$when {Response4 + 1} $then $null
+			$when {Response4 + 2} $then $null
+			$when {Response4 + 3} $then $null
+			$when Response6 $then $null
+			$when {Response6 + 1} $then $null
+			$when {Response6 + 2} $then $null
+			$when {Response6 + 3}  $then $null
 
-	$when PresentState $then $null
-	$when {PresentState + 1} $then $null
-	$when {PresentState + 2} $then $null
-	$when {PresentState + 3} $then $null
-	
-	//$when PowerControl $then sdhcRegisters[address] := (data & _hf)
+			$when PresentState $then $null
+			$when {PresentState + 1} $then $null
+			$when {PresentState + 2} $then $null
+			$when {PresentState + 3} $then $null
+			
 
-	$when ClockControl $then $call writeSDHCRegisters (address (data & _h05)) () //sdhcRegisters[address] := (data & _h05)
-	
-	//$when TimeoutControl $then sdhcRegisters[address] := (data & _hf)
-	
-	$when SoftwareReset $then $call writeSDHCRegisters (address (data & _h7)) () //sdhcRegisters[address] := (data & _h7)
+			$when ClockControl $then $call writeSDHCRegisters (addressTemp (data & _h05)) () //sdhcRegisters[addressTemp] := (data & _h05)
+			
+			$when SoftwareReset $then $call writeSDHCRegisters (addressTemp (data & _h7)) () //sdhcRegisters[addressTemp] := (data & _h7)
 
-	$when NormalInterruptStatus $then $call RW1C (data address) () 
-	$when {NormalInterruptStatus + 1} $then $null
-	
-	$when ErrorInterruptStatus $then $call RW1C (data address) ()
-	$when {ErrorInterruptStatus + 1} $then $call RW1C (data address) ()
-	
-	$when {NormalInterruptStatusEnable + 1} $then $call writeSDHCRegisters (address (data & _h1f)) ()//sdhcRegisters[address] := (data & _h1f)
-	
-	$when {ErrorInterruptStatusEnable + 1} $then $call writeSDHCRegisters (address (data & _hf7)) ()//sdhcRegisters[address] := (data & _hf7)
-	
-	$when {NormalInterruptSignalEnable + 1} $then $call writeSDHCRegisters (address (data & _h1f)) () //sdhcRegisters[address] := (data & _h1f)
+			$when NormalInterruptStatus $then $call RW1C (data addressTemp) () 
+			$when {NormalInterruptStatus + 1} $then $null
+			
+			$when ErrorInterruptStatus $then $call RW1C (data addressTemp) ()
+			$when {ErrorInterruptStatus + 1} $then $call RW1C (data addressTemp) ()
+			
+			$when {NormalInterruptStatusEnable + 1} $then $call writeSDHCRegisters (addressTemp (data & _h1f)) ()//sdhcRegisters[addressTemp] := (data & _h1f)
+			
+			$when {ErrorInterruptStatusEnable + 1} $then $call writeSDHCRegisters (addressTemp (data & _hf7)) ()//sdhcRegisters[addressTemp] := (data & _hf7)
+			
+			$when {NormalInterruptSignalEnable + 1} $then $call writeSDHCRegisters (addressTemp (data & _h1f)) () //sdhcRegisters[addressTemp] := (data & _h1f)
 
-	$when {ErrorInterruptSignalEnable + 1} $then $call writeSDHCRegisters (address (data & _hf7)) () //sdhcRegisters[address] := (data & _hf7)
-	
-	//$when AutoCmdError $then $null
-	//$when {AutoCmdError + 1} $then //sdhcRegisters[address] := ZERO_8
+			$when {ErrorInterruptSignalEnable + 1} $then $call writeSDHCRegisters (addressTemp (data & _hf7)) () //sdhcRegisters[addressTemp] := (data & _hf7)
+			
 
-	$when {HostControl2 + 1} $then $call writeSDHCRegisters (address (data & _hC0)) ()//sdhcRegisters[address] := (data & _hC0)
-	
-	$when Capabilities $then $null
-	$when {Capabilities + 1} $then $null
-	$when {Capabilities + 2} $then $null
-	$when {Capabilities + 3} $then $null
-	$when {Capabilities + 4} $then $null
-	$when {Capabilities + 5} $then $null
-	$when {Capabilities + 6} $then $null
-	$when {Capabilities + 7} $then $call writeSDHCRegisters (address ZERO_8) ()//sdhcRegisters[address] := ZERO_8
+			$when {HostControl2 + 1} $then $call writeSDHCRegisters (addressTemp (data & _hC0)) ()//sdhcRegisters[addressTemp] := (data & _hC0)
+			
+			$when Capabilities $then $null
+			$when {Capabilities + 1} $then $null
+			$when {Capabilities + 2} $then $null
+			$when {Capabilities + 3} $then $null
+			$when {Capabilities + 4} $then $null
+			$when {Capabilities + 5} $then $null
+			$when {Capabilities + 6} $then $null
+			$when {Capabilities + 7} $then $call writeSDHCRegisters (addressTemp ZERO_8) ()//sdhcRegisters[addressTemp] := ZERO_8
 
-	//$when MaxCurrentCapabilities $then $null
-	//$when {MaxCurrentCapabilities + 1} $then $null
-	//$when {MaxCurrentCapabilities + 2} $then $null
-	//$when {MaxCurrentCapabilities + 3} $then sdhcRegisters[address] := ZERO_8
-	//$when {MaxCurrentCapabilities + 4} $then sdhcRegisters[address] := ZERO_8
-	//$when {MaxCurrentCapabilities + 5} $then sdhcRegisters[address] := ZERO_8
-	//$when {MaxCurrentCapabilities + 6} $then sdhcRegisters[address] := ZERO_8
-	//$when {MaxCurrentCapabilities + 7} $then sdhcRegisters[address] := ZERO_8
+			$when HostControllerVersion $then $null
+			$when {HostControllerVersion + 1} $then $null
 
-	//$when PresetValue $then $null
-	//$when {PresetValue + 1} $then $null
-	//$when {PresetValue + 2} $then $null
-	//$when {PresetValue + 3} $then $null
-	//$when {PresetValue + 4} $then $null
-	//$when {PresetValue + 5} $then $null
-	//$when {PresetValue + 6} $then $null
-	//$when {PresetValue + 7} $then $null
-	//$when {PresetValue + 8} $then $null
-	//$when {PresetValue + 9} $then $null
-	//$when {PresetValue + 10} $then $null
-	//$when {PresetValue + 11} $then $null
-	//$when {PresetValue + 12} $then $null
-	//$when {PresetValue + 13} $then $null
-	//$when {PresetValue + 14} $then $null
-	//$when {PresetValue + 15} $then $null
-
-	//$when HostControllerVersion $then $null
-	//$when {HostControllerVersion + 1} $then $null
-
-
-	//For RW bits
-	$default $call writeSDHCRegisters (address data) ()//sdhcRegisters[address]:= data
-	$endswitch	
+			//For RW bits
+			$default $call writeSDHCRegisters (addressTemp data) ()//sdhcRegisters[addressTemp]:= data
+			$endswitch	
+			}
+		$endif
+		$volatile next_address := (addressTemp + 1)
+		$volatile next_bytemask:= (bytemaskTemp << 1)
+		$volatile next_data:= (dataTemp << 8)
+		$volatile next_I:= (I + 1)
+		$if(next_I<4)$then
+			$place[startloop]
+		$endif
 	}
 }
 //Module for storing RW1C type bits
@@ -148,10 +135,8 @@ $module [RW1C] $in(data:$uint<8> address:$uint<8>) $out() $is
 	$volatile b6:= ($mux d6 ZERO_1 current_d6)
 	$volatile b7:= ($mux d7 ZERO_1 current_d7)
 
-    //sdhcRegisters[address] := ($concat b7 b6 b5 b4 b3 b2 b1 b0)
 	$call writeSDHCRegisters (address ($concat b7 b6 b5 b4 b3 b2 b1 b0)) () 
 	$if(address == NormalInterruptStatus)$then
-		
 		normalInterruptFlag1:= ((~data) & normalInterruptFlag1)
 	$endif
 	$if(address == {NormalInterruptStatus + 1})$then
@@ -179,36 +164,10 @@ $module [resetRegisters] $in(resetCondition:$uint<2>) $out() $is
 	$call writeSDHCRegisters ({Capabilities + 6} ZERO_8) () //sdhcRegisters[{Capabilities + 6}]:= _h00
 	$call writeSDHCRegisters ({Capabilities + 7} ZERO_8) () //sdhcRegisters[{Capabilities + 7}]:= _h00
 
-	//sdhcRegisters[MaxCurrentCapabilities]:= _h64 //For 400mA current capabilities in 3.3V
-	//sdhcRegisters[{MaxCurrentCapabilities + 1}]:= _h96 //For 600mA for 3.0V
-	//sdhcRegisters[{MaxCurrentCapabilities + 2}]:= _hC8 //For 800mA for 1.8V
-	//sdhcRegisters[{MaxCurrentCapabilities + 3}]:= _h00
-	//sdhcRegisters[{MaxCurrentCapabilities + 4}]:= _h00
-	//sdhcRegisters[{MaxCurrentCapabilities + 5}]:= _h00
-	//sdhcRegisters[{MaxCurrentCapabilities + 6}]:= _h00
-	//sdhcRegisters[{MaxCurrentCapabilities + 7}]:= _h00
-
-	//sdhcRegisters[PresetValue]:= _h7D
-	//sdhcRegisters[{PresetValue + 1}]:= _h00
-	//sdhcRegisters[{PresetValue + 2}]:= _h02
-	//sdhcRegisters[{PresetValue + 3}]:= _h00
-	//sdhcRegisters[{PresetValue + 4}]:= _h01  
-	//sdhcRegisters[{PresetValue + 5}]:= _h00
-	//sdhcRegisters[{PresetValue + 6}]:= _h04
-	//sdhcRegisters[{PresetValue + 7}]:= _h00
-	//sdhcRegisters[{PresetValue + 8}]:= _h02
-	//sdhcRegisters[{PresetValue + 9}]:= _h40 
-	//sdhcRegisters[{PresetValue + 10}]:=_h01 
-	//sdhcRegisters[{PresetValue + 11}]:=_h80
-	//sdhcRegisters[{PresetValue + 12}]:=_h00
-	//sdhcRegisters[{PresetValue + 13}]:=_h00
-	//sdhcRegisters[{PresetValue + 14}]:=_h00
-	//sdhcRegisters[{PresetValue + 15}]:=_h00
-
 	$call writeSDHCRegisters ({ClockControl + 1} _h7D) ()//sdhcRegisters[{ClockControl + 1}] :=_h7D 
 
-	//sdhcRegisters[HostControllerVersion]:= _h02  //Host Controller Version 3.00
-	//sdhcRegisters[{HostControllerVersion + 1}]:= _h00
+	sdhcRegisters[HostControllerVersion]:= _h02  //Host Controller Version 3.00
+	sdhcRegisters[{HostControllerVersion + 1}]:= _h00
 
 	$branchblock[resetRegister]
 	{
@@ -217,12 +176,10 @@ $module [resetRegisters] $in(resetCondition:$uint<2>) $out() $is
 		$endmerge
 		$call readSDHCRegisters (I) (current_register_value) //current_register_value:= sdhcRegisters[I]
 		$call readSDHCRegisters (SoftwareReset) (current_softwarereset_register_value) //current_softwarereset_register_value:= sdhcRegisters[SoftwareReset]
-		$volatile condition:= ((I>=Capabilities) & (I<{Capabilities + 8})) 
-		//$volatile condition2:=((I>=MaxCurrentCapabilities) & (I<{MaxCurrentCapabilities + 8}))  
-		//$volatile condition3:=((I>=PresetValue) & (I<{PresetValue + 16})) 
-		//$volatile condition4:=((I>=HostControllerVersion) & (I<{HostControllerVersion + 2}))
-		$volatile condition5:=(I == {ClockControl + 1})
-		$if($reduce | condition condition5) $then
+		$volatile condition1:= ((I>=Capabilities) & (I<{Capabilities + 8})) 
+		$volatile condition2:=((I>=HostControllerVersion) & (I<{HostControllerVersion + 2}))
+		$volatile condition3:=(I == {ClockControl + 1})
+		$if($reduce | condition1 condition2 condition3) $then
 			$null
 		$else $if(resetCondition == ZERO_2) $then
 			$call writeSDHCRegisters (I ZERO_8) () //sdhcRegisters[I]:= ZERO_8
@@ -239,9 +196,6 @@ $module [resetRegisters] $in(resetCondition:$uint<2>) $out() $is
 				$if(I=={PresentState + 1}) $then
 					$call writeSDHCRegisters (I ZERO_8) () //sdhcRegisters[I]:= ZERO_8
 				$endif
-				//$if(I==BlockGapControl) $then
-				//	sdhcRegisters[I]:= (current_register_value & _h0C)
-				//$endif
 				$if(I==NormalInterruptStatus) $then
 					$call writeSDHCRegisters (I (current_register_value & _hC1) ) () //sdhcRegisters[I]:= (current_register_value & _hC1)
 				$endif
@@ -261,4 +215,9 @@ $module [resetRegisters] $in(resetCondition:$uint<2>) $out() $is
 		$endif
 	}
 }
-
+// Module for writing into registers
+$module [writeSDHCRegisters]
+$in (address:$uint<8> data:$uint<8>) $out () $is
+{
+	sdhcRegisters[address] := data
+}
