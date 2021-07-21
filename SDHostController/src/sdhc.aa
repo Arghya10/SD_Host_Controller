@@ -78,19 +78,6 @@ $module [sdhc_daemon] $in() $out() $is
 		$call interruptGeneration (dataErrorInterruptStatusVar1 dataErrorInterruptStatusVar errorInterruptStatusVar1 errorInterruptStatusVar2 readDataTransferComplete dataTransferComplete transferComplete bufferReadReady bufferWriteReady normalInterruptStatusVar1) ()
 		
 		//Clock Controller
-		//frequencyDivider:= ($concat ($slice sdhcRegisters[ClockControl] 7 6) sdhcRegisters[{ClockControl + 1}])
-		//$call readSDHCRegisters (ClockControl) (clockControlVal0)
-		//$call readSDHCRegisters ({ClockControl + 1}) (clockControlVal1)
-		//$volatile frequencyDivider:= ($concat ($slice clockControlVal0 7 6) clockControlVal1)
-		//$if(frequencyDivider == 0)$then
-		//	frequencySelect:= ($bitcast ($uint<20>) 2)
-		//$else
-		//	frequencySelect:= (($bitcast ($uint<20>) frequencyDivider) * 2)
-		//$endif
-		//sdhcRegisters[ClockControl]:= ($concat ($slice sdhcRegisters[ClockControl] 7 2) clkStable (sdhcRegisters[ClockControl] [] 0))
-		//$volatile tempclockcontroller := ($concat ($slice clockControlVal0 7 2) clkStable (clockControlVal0 [] 0))
-		//$call writeSDHCRegisters (ClockControl tempclockcontroller) ()
-		//sdClkEnable:= (tempclockcontroller [] 2)
 		$call clockController () () 
 
 		$place[loopback]	
