@@ -20,5 +20,7 @@ The  module for writing into the registers:
 	sdhc_register_write.aa
 The  module for reading from the registers:
 	sdhc_register_read.aa
+The clockController module:
+	clockController.aa
 All declarations are made here:
 	decls.aa
